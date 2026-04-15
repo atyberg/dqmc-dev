@@ -232,17 +232,32 @@ def bond2_params(
     num_b2 = b2ps * N  # total 2-bonds in cluster
 
     # per 2-bond (per SITE) measurement mapping
-    if trans_sym:
-        map_b2 = np.tile(
-            np.arange(b2ps, dtype=np.int32), (N, 1)
-        ).T.flatten()  # length N*b2ps
-        degen_b2 = np.full(b2ps, N, dtype=np.int32)
-    else:
-        map_b2 = np.arange(num_b2, dtype=np.int32)  # length N*b2ps
-        degen_b2 = np.ones(num_b2, dtype=np.int32)  # length N*b2ps
-    num_b2_accum = map_b2.max() + 1
-    assert num_b2_accum == degen_b2.size
-    assert np.all(degen_b2 == degen_b2[0])
+    if Norb_per_cell_dict[geometry] == 1:
+        if trans_sym:
+            map_b2 = np.tile(
+                np.arange(b2ps, dtype=np.int32), (N, 1)
+            ).T.flatten()  # length N*b2ps
+            degen_b2 = np.full(b2ps, N, dtype=np.int32)
+        else:
+            map_b2 = np.arange(num_b2, dtype=np.int32)  # length N*b2ps
+            degen_b2 = np.ones(num_b2, dtype=np.int32)  # length N*b2ps
+        num_b2_accum = map_b2.max() + 1
+        assert num_b2_accum == degen_b2.size
+        assert np.all(degen_b2 == degen_b2[0])
+    elif Norb_per_cell_dict[geometry] > 1:
+        Norb_per_cell = Norb_per_cell_dict[geometry]
+        if trans_sym:
+            map_b2 = np.tile(
+                np.arange(b2ps*Norb_per_cell, dtype=np.int32), (Nx*Ny, 1)
+            ).T.flatten()  # length N*b2ps
+            degen_b2 = np.full(b2ps*Norb_per_cell, Nx*Ny, dtype=np.int32)
+        else:
+            map_b2 = np.arange(num_b2, dtype=np.int32)  # length N*b2ps
+            degen_b2 = np.ones(num_b2, dtype=np.int32)  # length N*b2ps
+        num_b2_accum = map_b2.max() + 1
+        assert num_b2_accum == degen_b2.size
+        assert np.all(degen_b2 == degen_b2[0])
+
 
     bond2s = np.zeros((2, num_b2), dtype=np.int32)  # NOTE: placeholder
     if geometry == "square":
@@ -306,7 +321,7 @@ def bond2_params(
                 bond2s[1,ia + N] = x + Nx*((y+1)%Ny) + Nx*Ny*0
                 # vertical (upwards) bond at ((x+1)%Nx, (y-1)%Ny, 0)
                 bond2s[0,ia + 2*N] = ia
-                bond2s[0,ia + 2*N] = (x+1)%Nx + Nx*((y-1)%Ny) + Nx*Ny*0
+                bond2s[1,ia + 2*N] = (x+1)%Nx + Nx*((y-1)%Ny) + Nx*Ny*0
 
                 # Bonds from the B atom at (x,y,1)
                 ib = x + Nx*y + Nx*Ny*1
@@ -319,7 +334,7 @@ def bond2_params(
                 bond2s[1,ib + N] = x + Nx*((y+1)%Ny) + Nx*Ny*1
                 # vertical (upwards) bond at ((x+1)%Nx, (y-1)%Ny, 1)
                 bond2s[0,ib + 2*N] = ib
-                bond2s[0,ib + 2*N] = (x+1)%Nx + Nx*((y-1)%Ny) + Nx*Ny*1
+                bond2s[1,ib + 2*N] = (x+1)%Nx + Nx*((y-1)%Ny) + Nx*Ny*1
 
                 if b2ps == 12:
                     # tp != 0 not yet implemented
