@@ -854,13 +854,24 @@ def create_1(
                                 if trans_sym:
                                     ky = (iy - jy) % Ny
                                     kx = (ix - jx) % Nx
-                                    # total column index of matrix index [kx,ky,io,jo]
-                                    k = kx + Nx * ky + Nx * Ny * io + N * jo
+                                    # # total column index of matrix index [kx,ky,io,jo]
+                                    # k = kx + Nx * ky + Nx * Ny * io + N * jo
+
+                                    # NOTE: Alexa changed column ordering
+                                    # total column index of matrix index [kx,ky,jo,io]
+                                    k = kx + Nx * ky + Nx * Ny * jo + N * io
                                 else:
-                                    # total column index of matrix index [ix,iy,io,jx,jy,jo]
-                                    k = (ix + Nx * iy + Nx * Ny * io) + N * (
-                                        jx + Nx * jy + Nx * Ny * jo
+                                    # # total column index of matrix index [ix,iy,io,jx,jy,jo]
+                                    # k = (ix + Nx * iy + Nx * Ny * io) + N * (
+                                    #     jx + Nx * jy + Nx * Ny * jo
+                                    # )
+
+                                    # NOTE: Alexa changed column ordering
+                                    # total column index of matrix index [jx,jy,jo,ix,iy,io]
+                                    k = (jx + Nx * jy + Nx * Ny * jo) + N * (
+                                        ix + Nx * iy + Nx * Ny * io
                                     )
+
                                 map_ij[
                                     jx + Nx * jy + Nx * Ny * jo,
                                     ix + Nx * iy + Nx * Ny * io,
@@ -872,10 +883,25 @@ def create_1(
         # print("Trans sym = ",trans_sym)
         # print("map",map_ij,map_ij.shape,"degen",degen_ij,degen_ij.shape,"num",num_ij)
 
-        # 1 bond 1 site mapping NOTE: placeholder
-        map_bs = np.zeros((N, num_b), dtype=np.int32)
-        num_bs = bps * N if trans_sym else num_b * N
-        degen_bs = np.zeros(num_bs, dtype=np.int32)
+        # 1 bond 1 site mapping NOTE: Alexa implemented but need to check
+        map_bs = np.zeros((N, num_b), dtype=np.int32) # good
+        num_bs = int(bps * N * Norb) if trans_sym else num_b * N # for trans_sym starting from A and B site not equivalent -> have to mult by Norb
+        degen_bs = np.zeros(num_bs, dtype=np.int32) # I think good?
+        bonds_per_cell = int(bps * Norb)
+        for j in range(N):
+            for i in range(Nx*Ny): # loops over all A sites in the lattice
+                # similar to in bond_params() func we have to count bonds per cell not per site bc bps=1.5 and bpc=3
+                # specifically for honeycomb, counting all 3 bonds from A sites counts all bonds in the lattice
+                k = map_ij[j, i]
+                num_k = N if trans_sym else N * Nx * Ny
+                # trans_sym on: since we're only using the A sites for the i atom, the k index only runs through the first N with col indexing [kx,ky,jo,io] (missing last io index, io=0)
+                # trans_sym off: still only using A sites for i atom -> k index runs through first N*Nx*Ny with col indexing [jx,jy,jo,ix,iy,io] (missing last io index bc io=0)
+                for ib in range(bonds_per_cell):
+                    kk = k + num_k * ib # use num_k instead of num_ij here
+                    map_bs[j, i + Nx*Ny * ib] = kk
+                    degen_bs[kk] += 1
+        assert num_bs == map_bs.max() + 1 == degen_bs.size
+        assert np.all(degen_bs == degen_bs[0])
 
         # 1 bond - 1 bond mapping NOTE: placeholder
         map_bb = np.zeros((num_b, num_b), dtype=np.int32)
