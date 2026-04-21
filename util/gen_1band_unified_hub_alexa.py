@@ -867,11 +867,9 @@ def create_1(
                                     # )
 
                                     # NOTE: Alexa changed column ordering
-                                    # total column index of matrix index [jx,jy,jo,ix,iy,io]
-                                    k = (jx + Nx * jy + Nx * Ny * jo) + N * (
-                                        ix + Nx * iy + Nx * Ny * io
-                                    )
-
+                                    # total column index of matrix index [jx,jy,,ix,iy,jo,io]
+                                    k = jx + Nx * jy + Nx*Ny * ix + Nx*Ny*Nx * iy + Nx*Ny*Nx*Ny * jo + Nx*Ny*N * io
+                                    
                                 map_ij[
                                     jx + Nx * jy + Nx * Ny * jo,
                                     ix + Nx * iy + Nx * Ny * io,
@@ -903,10 +901,23 @@ def create_1(
         assert num_bs == map_bs.max() + 1 == degen_bs.size
         assert np.all(degen_bs == degen_bs[0])
 
-        # 1 bond - 1 bond mapping NOTE: placeholder
+        # 1 bond - 1 bond mapping NOTE: Alexa implemented but need to check
         map_bb = np.zeros((num_b, num_b), dtype=np.int32)
-        num_bb = bps * bps * N if trans_sym else num_b * num_b
+        num_bb = int(bps * bps * N * Norb) if trans_sym else num_b * num_b # for honeycomb starting from A and B site not equivalent -> mult by Norb
         degen_bb = np.zeros(num_bb, dtype=np.int32)
+        bonds_per_cell = int(bps * Norb)
+        # Count bonds per unit cell like we did in bond_params, looping over A sites
+        for j in range(Nx*Ny):
+            for i in range(Nx*Ny):
+                k = map_ij[j, i]
+                num_k = Nx * Ny if trans_sym else Nx * Ny * Nx * Ny # trans_sym off not yet implemented
+                for jb in range(bonds_per_cell):
+                    for ib in range(bonds_per_cell):
+                        kk = k + num_k * (jb + bonds_per_cell * ib) # do I want to switch ib and jb here? Order seems kind of arbitrary. Does it matter?
+                        map_bb[j + Nx*Ny * jb, i + Nx*Ny * ib] = kk
+                        degen_bb[kk] += 1
+        assert num_bb == map_bb.max() + 1 == degen_bb.size
+        assert np.all(degen_bb == degen_bb[0])
 
         # my definition: Bonds defined by two hopping steps
         # NOTE: placeholder
