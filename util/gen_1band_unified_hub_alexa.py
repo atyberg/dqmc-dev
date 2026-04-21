@@ -931,12 +931,14 @@ def create_1(
         degen_b2b2 = np.zeros(num_b2b2, dtype=np.int32)
 
         # bond 2-bond mapping NOTE: placeholder
-        num_bb2 = bps * b2ps * N if trans_sym else num_b * num_b2
+        # had to convert everything that uses bps to int or else it wouldn't run (since bps=1.5 for honeycomb) -Alexa
+        num_bb2 = int(bps * b2ps * N) if trans_sym else num_b * num_b2
         map_bb2 = np.zeros((num_b, num_b2), dtype=np.int32)
         degen_bb2 = np.zeros(num_bb2, dtype=np.int32)
 
         # 2-bond bond mapping NOTE: placeholder
-        num_b2b = b2ps * bps * N if trans_sym else num_b2 * num_b
+        # had to convert everything that uses bps to int or else it wouldn't run (since bps=1.5 for honeycomb) -Alexa
+        num_b2b = int(b2ps * bps * N) if trans_sym else num_b2 * num_b
         map_b2b = np.zeros((num_b2, num_b), dtype=np.int32)
         degen_b2b = np.zeros(num_b2b, dtype=np.int32)
 
