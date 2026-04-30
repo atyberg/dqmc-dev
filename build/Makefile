@@ -1,6 +1,5 @@
 CC = icc
 
-# CFLAGS = -std=gnu11 -Wall -Wextra -Ofast -xHost # old, caused weird error message?
 CFLAGS = -std=gnu11 -Ofast -axIVYBRIDGE,HASWELL,BROADWELL,SKYLAKE,SKYLAKE-AVX512
 CFLAGS += -DMKL_DIRECT_CALL_SEQ -mkl=sequential
 CFLAGS += -DGIT_ID=\"$(shell git rev-parse --short HEAD)\"
