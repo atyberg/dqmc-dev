@@ -351,7 +351,11 @@ def main():
     parser.add_argument('--tb_file', default=None, help='Optional path to tight-binding data file')
     
     args = parser.parse_args()
-    
+
+    # Check for incompatible options
+    if args.plot == 'both' and args.tb_file is not None:
+        parser.error("Cannot use --plot both with --tb_file.")
+
     # Create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
     
@@ -360,6 +364,8 @@ def main():
     
     if args.plot in ['compressibility', 'both']:
         plot_compressibility_jackknife(args.input_dir, args.output_dir, args.tb_file)
+
+    
         
 
 def main_vs():
