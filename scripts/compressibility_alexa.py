@@ -13,7 +13,7 @@ Usage example:
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from util import util
+import util
 import argparse
 
 Nx, Ny, Norb, U, beta = 0, 0, 0, 0, 0
