@@ -240,20 +240,20 @@ def plot_density_jackknife(base_dir, output_dir, TB_file=None):
         plt.errorbar(mu_vals[mu_mask], n_means[mu_mask], n_errs[mu_mask], fmt='o', linewidth=2, markersize=6, label="DQMC")
         plt.plot(mu_vals_TB, n_vals_TB, 'o', linewidth=2, markersize=6, label="TB")
 
-        save_file = f"density_{geometry}_DQMC+TB_{Nx}x{Ny}_U{U}_T{temp:.1f}"
+        save_file = f"density_{geometry}_DQMC+TB_{Nx}x{Ny}_U{U}_T{temp:.2f}"
 
     else:
         plt.errorbar(mu_vals, n_means, n_errs, fmt='o', linewidth=2, markersize=6, label="DQMC")
         # plt.xscale('log')
 
-        save_file = f"density_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.1f}"
+        save_file = f"density_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}"
         # np.savetxt(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.csv", np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
         np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
 
 
     plt.xlabel('$\\mu$', fontsize=12)
     plt.ylabel('$\\langle n \\rangle$', fontsize=12)
-    plt.title(f'Density for {Nx}x{Ny} {geometry} lattice, U={U}, T={temp:.1f}', fontsize=10)
+    plt.title(f'Density for {Nx}x{Ny} {geometry} lattice, U={U}, T={temp:.2f}', fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.legend(frameon=False)
     plt.tight_layout()
@@ -317,20 +317,20 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None):
         plt.errorbar(mu_vals[mu_mask], kappa_means[mu_mask], kappa_errs[mu_mask], fmt='o', linewidth=2, markersize=6, label="DQMC")
         plt.plot(mu_vals_TB, kappa_vals_TB, 'o', linewidth=2, markersize=6, label="TB")
 
-        save_file = f"compressibility_{geometry}_DQMC+TB_{Nx}x{Ny}_U{U}_T{temp:.1f}"
+        save_file = f"compressibility_{geometry}_DQMC+TB_{Nx}x{Ny}_U{U}_T{temp:.2f}"
 
     else:
         plt.errorbar(mu_vals, kappa_means, kappa_errs, fmt='o', linewidth=2, markersize=6, label="DQMC")
         # plt.xscale('log')
 
-        save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.1f}"
+        save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}"
         # np.savetxt(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.csv", np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
         np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[mu_vals, kappa_means, kappa_errs], delimiter="\t", header="mu\tkappa\tkappa error")
 
 
     plt.xlabel('$\\mu$', fontsize=12)
     plt.ylabel('$\\kappa$', fontsize=12)
-    plt.title(f'Compressibility for {Nx}x{Ny} {geometry} lattice, U={U}, T={temp:.1f}', fontsize=10)
+    plt.title(f'Compressibility for {Nx}x{Ny} {geometry} lattice, U={U}, T={temp:.2f}', fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.legend(frameon=False)
     plt.tight_layout()
@@ -365,8 +365,6 @@ def main():
     if args.plot in ['compressibility', 'both']:
         plot_compressibility_jackknife(args.input_dir, args.output_dir, args.tb_file)
 
-    
-        
 
 def main_vs():
     # TODO: modify this so it can take path in as a command line argument
