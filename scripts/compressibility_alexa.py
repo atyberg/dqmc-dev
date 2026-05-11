@@ -61,7 +61,7 @@ def load_densities(base_dir):
         # divide by sign
         # everything is of shape (Nbins, -1)
         sign = np.reshape(sign, (-1,1))
-        density = density / sign / 2 # divide by 2 here bc density is the sum of nup and ndn not the average
+        density = density / sign # don't divide by 2 here because we want to set half filling at <n>=1
 
         # find the per site density, geometry-specific
         if geometry == "square":
