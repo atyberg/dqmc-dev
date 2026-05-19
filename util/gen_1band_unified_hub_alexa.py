@@ -910,10 +910,12 @@ def create_1(
         for j in range(Nx*Ny):
             for i in range(Nx*Ny):
                 k = map_ij[j, i]
-                num_k = Nx * Ny if trans_sym else Nx * Ny * Nx * Ny # trans_sym off not yet implemented
+                num_k = Nx * Ny if trans_sym else Nx * Ny * Nx * Ny
                 for jb in range(bonds_per_cell):
                     for ib in range(bonds_per_cell):
-                        kk = k + num_k * (jb + bonds_per_cell * ib) # do I want to switch ib and jb here? Order seems kind of arbitrary. Does it matter?
+                        kk = k + num_k * (ib + bonds_per_cell * jb) 
+                        # do I want to switch ib and jb here? Order seems kind of arbitrary. Does it matter?
+                        # currently keeping consistent with the square lattice ib and jb ordering
                         map_bb[j + Nx*Ny * jb, i + Nx*Ny * ib] = kk
                         degen_bb[kk] += 1
         assert num_bb == map_bb.max() + 1 == degen_bb.size
