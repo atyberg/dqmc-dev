@@ -24,7 +24,7 @@ LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLRO
 
 OBJS = data.o dqmc.o greens.o meas.o mem.o prof.o sig.o updates.o
 
-SUFFIX := zen4
+SUFFIX = zen4
 
 all: dqmc_1 dqmc_stack
 
