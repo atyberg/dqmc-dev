@@ -26,13 +26,13 @@ OBJS = data.o dqmc.o greens.o meas.o prof.o sig.o updates.o
 
 SUFFIX = zen4
 
-all: dqmc_1 dqmc_stack
+all: dqmc_1_${SUFFIX} dqmc_stack_${SUFFIX}
 
-dqmc_1: ${OBJS} main_1.o
+dqmc_1_${SUFFIX}: ${OBJS} main_1.o
 	@echo linking $@
 	@${CC} ${CFLAGS} -o $@_${SUFFIX} $^ ${LDFLAGS}
 
-dqmc_stack: ${OBJS} main_stack.o
+dqmc_stack_${SUFFIX}: ${OBJS} main_stack.o
 	@echo linking $@
 	@${CC} ${CFLAGS} -o $@_${SUFFIX} $^ ${LDFLAGS}
 
