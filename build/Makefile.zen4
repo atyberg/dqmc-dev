@@ -22,7 +22,7 @@ LDFLAGS += -L/share/software/user/restricted/imkl/2019/lib/intel64
 LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
 # LDFLAGS += -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
-OBJS = data.o dqmc.o greens.o meas.o mem.o prof.o sig.o updates.o
+OBJS = data.o dqmc.o greens.o meas.o prof.o sig.o updates.o
 
 SUFFIX = zen4
 
