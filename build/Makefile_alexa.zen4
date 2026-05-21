@@ -1,0 +1,52 @@
+CC = gcc
+
+CFLAGS = -std=gnu11 -Ofast -flto -march=znver4 -mtune=znver4
+CFLAGS += -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter
+CFLAGS += -DMKL_DIRECT_CALL_SEQ
+CFLAGS += -DGIT_ID=\"$(shell git describe --always)\"
+CFLAGS += -DOMP_MEAS_NUM_THREADS=2
+CFLAGS += -DPROFILE_ENABLE
+# CFLAGS += -DUSE_CPLX  # uncomment to use complex numbers
+CFLAGS += -fopenmp
+CFLAGS += -D__builtin_assume\(x\)=
+
+CFLAGS += -I${MKLROOT}/include
+
+OPTFLAGS = -fargument-noalias
+
+LDFLAGS += -lhdf5 -lhdf5_hl
+LDFLAGS += -L${MKLROOT}/lib/intel64
+LDFLAGS += -L/share/software/user/restricted/imkl/2019/lib/intel64
+#LDFLAGS += -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+
+LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+# LDFLAGS += -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+
+# Separate object directories
+OBJDIR_GCC = obj_gcc
+OBJDIR_ICC = obj_icc
+
+SRCS = data.o dqmc.o greens.o meas.o prof.o sig.o updates.o
+OBJS_GCC = $(SRCS:%.c=$(OBJDIR_GCC)/%.o)
+
+SUFFIX = zen4
+
+all_gcc: dqmc_1_${SUFFIX} dqmc_stack_${SUFFIX}
+
+dqmc_1_${SUFFIX}: ${OBJS_GCC} ${OBJDIR_GCC}/main_1.o
+	@echo linking $@
+	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
+
+dqmc_stack_${SUFFIX}: ${OBJS_GCC} ${OBJDIR_GCC}/main_stack.o
+	@echo linking $@
+	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
+
+${OBJDIR_GCC}/%.o: ../src/%.c | ${OBJDIR_GCC}
+	@echo compiling $< # do we need (gcc here?)
+	@${CC} -c ${CFLAGS} ${OPTFLAGS} $< -o $@
+
+clean_gcc:
+	rm -rf $(OBJDIR_GCC) dqmc_*_zen4
+
+
+
