@@ -23,30 +23,27 @@ LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLRO
 # LDFLAGS += -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
 # Separate object directories
-OBJDIR_GCC = obj_gcc
-OBJDIR_ICC = obj_icc
+OBJDIR_ZEN4 = obj_zen4
 
 SRCS = data.o dqmc.o greens.o meas.o prof.o sig.o updates.o
-OBJS_GCC = $(SRCS:%.c=$(OBJDIR_GCC)/%.o)
+OBJS_ZEN4 = $(SRCS:%.c=$(OBJDIR_ZEN4)/%.o)
 
-SUFFIX = zen4
+all: dqmc_1 dqmc_stack
 
-all_gcc: dqmc_1_${SUFFIX} dqmc_stack_${SUFFIX}
-
-dqmc_1_${SUFFIX}: ${OBJS_GCC} ${OBJDIR_GCC}/main_1.o
+dqmc_1: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_1.o
 	@echo linking $@
 	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
 
-dqmc_stack_${SUFFIX}: ${OBJS_GCC} ${OBJDIR_GCC}/main_stack.o
+dqmc_stack: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_stack.o
 	@echo linking $@
 	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
 
-${OBJDIR_GCC}/%.o: ../src/%.c | ${OBJDIR_GCC}
+${OBJDIR_ZEN4}/%.o: ../src/%.c | ${OBJDIR_ZEN4}
 	@echo compiling $< # do we need (gcc here?)
 	@${CC} -c ${CFLAGS} ${OPTFLAGS} $< -o $@
 
-clean_gcc:
-	rm -rf $(OBJDIR_GCC) dqmc_*_zen4
+clean_zen4:
+	rm -rf ${OBJDIR_ZEN4} *.o *.optrpt *.yaml *.tmp
 
 
 
