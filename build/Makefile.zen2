@@ -1,0 +1,42 @@
+CC = gcc
+
+CFLAGS = -std=gnu11 -O3 -flto -march=znver2 -mtune=znver2
+CFLAGS += -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter
+CFLAGS += -DMKL_DIRECT_CALL_SEQ
+CFLAGS += -DGIT_ID=\"$(shell git describe --always)\"
+CFLAGS += -DOMP_MEAS_NUM_THREADS=2
+CFLAGS += -DPROFILE_ENABLE
+# CFLAGS += -DUSE_CPLX  # uncomment to use complex numbers
+CFLAGS += -fopenmp
+CFLAGS += -D__builtin_assume\(x\)=
+
+CFLAGS += -I${MKLROOT}/include
+
+OPTFLAGS = -fargument-noalias
+
+LDFLAGS += -lhdf5 -lhdf5_hl
+LDFLAGS += -L${MKLROOT}/lib/intel64
+LDFLAGS += -L/share/software/user/restricted/imkl/2019/lib/intel64
+#LDFLAGS += -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+
+LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+# LDFLAGS += -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+
+OBJS = data.o dqmc.o greens.o meas.o mem.o prof.o sig.o updates.o
+
+all: dqmc_1 dqmc_stack
+
+dqmc_1: ${OBJS} main_1.o
+	@echo linking $@
+	@${CC} ${CFLAGS} -o $@.${CC} $^ ${LDFLAGS}
+
+dqmc_stack: ${OBJS} main_stack.o
+	@echo linking $@
+	@${CC} ${CFLAGS} -o $@.${CC} $^ ${LDFLAGS}
+
+%.o: ../src/%.c
+	@echo compiling $<
+	@${CC} -c ${CFLAGS} ${OPTFLAGS} $<
+
+clean:
+	rm -f *.o *.optrpt *.yaml *.tmp *.gcc dqmc_1 dqmc_stack
