@@ -30,11 +30,11 @@ all: dqmc_1_${SUFFIX} dqmc_stack_${SUFFIX}
 
 dqmc_1_${SUFFIX}: ${OBJS} main_1.o
 	@echo linking $@
-	@${CC} ${CFLAGS} $^ -o $@ ${LDFLAGS}
+	@${CC} ${CFLAGS} -o $@_${SUFFIX} $^ ${LDFLAGS}
 
 dqmc_stack_${SUFFIX}: ${OBJS} main_stack.o
 	@echo linking $@
-	@${CC} ${CFLAGS} $^ -o $@ ${LDFLAGS}
+	@${CC} ${CFLAGS} -o $@_${SUFFIX} $^ ${LDFLAGS}
 
 %.o: ../src/%.c
 	@echo compiling $<
