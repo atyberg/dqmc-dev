@@ -25,7 +25,7 @@ LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLRO
 # Separate object directories
 OBJDIR_ZEN4 = obj_zen4
 
-SRCS = data.o dqmc.o greens.o meas.o prof.o sig.o updates.o
+SRCS = data.c dqmc.c greens.c meas.c prof.c sig.c updates.c
 OBJS_ZEN4 = $(SRCS:%.c=$(OBJDIR_ZEN4)/%.o)
 
 all: dqmc_1 dqmc_stack
