@@ -32,24 +32,24 @@ OBJS_ZEN4 = $(SRCS:%.c=$(OBJDIR_ZEN4)/%.o)
 all: one stack
 
 one: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_1.o
-    @echo linking dqmc_1_zen4
-    @${CC} ${CFLAGS} -o dqmc_1_zen4 $? ${LDFLAGS}
+	@echo linking dqmc_1_zen4
+	@${CC} ${CFLAGS} -o dqmc_1_zen4 $? ${LDFLAGS}
 
 stack: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_stack.o
-    @echo linking dqmc_stack_zen4
-    @${CC} ${CFLAGS} -o dqmc_stack_zen4 $? ${LDFLAGS}	
+	@echo linking dqmc_stack_zen4
+	@${CC} ${CFLAGS} -o dqmc_stack_zen4 $? ${LDFLAGS}	
 
 ${OBJDIR_ZEN4}/%.o: ../src/%.c
-    @echo compiling $<
-    @${CC} -c ${CFLAGS} $< -o $@
+	@echo compiling $<
+	@${CC} -c ${CFLAGS} $< -o $@
 
 $(OBJDIR_ZEN4):
-    @mkdir -p $(OBJDIR_ZEN4)
+	@mkdir -p $(OBJDIR_ZEN4)
 
 $(OBJS_ZEN4): | $(OBJDIR_ZEN4)
 
 clean_zen4:
-    rm -rf ${OBJDIR_ZEN4} *.o *.optrpt *.yaml *.tmp
+	rm -rf ${OBJDIR_ZEN4} *.o *.optrpt *.yaml *.tmp
 
 
 
