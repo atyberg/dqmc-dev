@@ -1,26 +1,27 @@
 CC = gcc
 
-CFLAGS = -std=gnu11 -Ofast -flto -march=znver4 -mtune=znver4
+CFLAGS = -std=gnu17 -Ofast -march=znver4 
 CFLAGS += -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter
-CFLAGS += -DMKL_DIRECT_CALL_SEQ
-CFLAGS += -DGIT_ID=\"$(shell git describe --always)\"
+CFLAGS += -DMKL_DIRECT_CALL_SEQ 
+CFLAGS += -DGIT_ID=\"$(shell git rev-parse --short HEAD)\"
+CFLAGS += -DGIT_REPO=\"$(shell git config --get remote.origin.url)\"
 CFLAGS += -DOMP_MEAS_NUM_THREADS=2
 CFLAGS += -DPROFILE_ENABLE
 # CFLAGS += -DUSE_CPLX  # uncomment to use complex numbers
-CFLAGS += -fopenmp
-CFLAGS += -D__builtin_assume\(x\)=
+CFLAGS += -fopenmp  
 
-CFLAGS += -I${MKLROOT}/include
+#might need extra -I flags to specify header locations
+#might need extra -L flags to specify library locations
+#CFLAGS += -I/home/jxding/miniconda3/include/
+#LDFLAGS += -L/home/jxding/miniconda3/lib/
 
-OPTFLAGS = -fargument-noalias
+# these lines are not necessary after running ICX setvars.sh, which sets
+# $CPATH and $LD_LIBRARY_PATH
+# CFLAGS += -I${MKLROOT}/include
+# LDFLAGS += -L${MKLROOT}/lib/intel64
 
-LDFLAGS += -lhdf5 -lhdf5_hl
-LDFLAGS += -L${MKLROOT}/lib/intel64
-LDFLAGS += -L/share/software/user/restricted/imkl/2019/lib/intel64
-#LDFLAGS += -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-
-LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
-# LDFLAGS += -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+LDFLAGS += -lhdf5 -lhdf5_hl 
+LDFLAGS += -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 
 # Separate object directories
 OBJDIR_ZEN4 = obj_zen4
@@ -28,19 +29,24 @@ OBJDIR_ZEN4 = obj_zen4
 SRCS = data.c dqmc.c greens.c meas.c prof.c sig.c updates.c
 OBJS_ZEN4 = $(SRCS:%.c=$(OBJDIR_ZEN4)/%.o)
 
-all: dqmc_1 dqmc_stack
+all: one stack
 
-dqmc_1: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_1.o
-	@echo linking $@
-	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
+one: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_1.o
+	@echo linking dqmc_1_zen4
+	@${CC} ${CFLAGS} -o dqmc_1_zen4 $? ${LDFLAGS}
 
-dqmc_stack: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_stack.o
-	@echo linking $@
-	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
+stack: ${OBJS_ZEN4} ${OBJDIR_ZEN4}/main_stack.o
+    @echo linking dqmc_stack_zen4
+    @${CC} ${CFLAGS} -o dqmc_stack_zen4 $? ${LDFLAGS}	
 
-${OBJDIR_ZEN4}/%.o: ../src/%.c | ${OBJDIR_ZEN4}
-	@echo compiling $< # do we need (gcc here?)
-	@${CC} -c ${CFLAGS} ${OPTFLAGS} $< -o $@
+${OBJDIR_ZEN4}/%.o: ../src/%.c
+	@echo compiling $<
+	@${CC} -c ${CFLAGS} $< -o $@
+
+$(OBJDIR_ZEN4):
+	@mkdir -p $(OBJDIR_ZEN4)
+
+$(OBJS_ZEN4): | $(OBJDIR_ZEN4)
 
 clean_zen4:
 	rm -rf ${OBJDIR_ZEN4} *.o *.optrpt *.yaml *.tmp
