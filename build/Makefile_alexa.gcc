@@ -32,13 +32,13 @@ OBJS_GCC = $(SRCS:%.c=$(OBJDIR_GCC)/%.o)
 
 all: one stack
 
-one: ${OBJS_GCC} ${OBJDIR_GCC}/main_1.o
-	@echo linking dqmc_1_gcc
-	@${CC} ${CFLAGS} -o dqmc_1_gcc $? ${LDFLAGS}
+one: ${OBJS_GCC} ${OBJDIR_GCC}/main_1.o | $(OBJDIR_GCC)
+	@echo linking ${OBJDIR_GCC}/dqmc_1_gcc
+	@${CC} ${CFLAGS} -o ${OBJDIR_GCC}/dqmc_1_gcc $^ ${LDFLAGS}
 
-stack: ${OBJS_GCC} ${OBJDIR_GCC}/main_stack.o
-	@echo linking dqmc_stack_gcc
-	@${CC} ${CFLAGS} -o dqmc_stack_gcc $? ${LDFLAGS}	
+stack: ${OBJS_GCC} ${OBJDIR_GCC}/main_stack.o | $(OBJDIR_GCC)
+	@echo linking ${OBJDIR_GCC}/dqmc_stack_gcc
+	@${CC} ${CFLAGS} -o ${OBJDIR_GCC}/dqmc_stack_gcc $^ ${LDFLAGS}	
 
 ${OBJDIR_GCC}/%.o: ../src/%.c
 	@echo compiling $<
