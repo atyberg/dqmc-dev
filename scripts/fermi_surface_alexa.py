@@ -278,10 +278,17 @@ def plot_spectral_proxy(path, output_dir, gt0, show_BZ=False, fold_k=True):
 
     spectral_proxy = beta * gt0_k_mean
 
+    # # FOR TESTING TO FIND K POINT
+    # # index of the K point at (0, 4pi/3a)
+    # a = 1
+    # K_target = np.array([0, 4*np.pi/(3*np.sqrt(3)*a)])
+    # distances = np.linalg.norm(k_mesh - K_target, axis=1)
+    # K_idx = np.argmin(distances)
+
     plt.figure(figsize=(8, 6))
     # plt.scatter(k_mesh[:, 0], k_mesh[:, 1], c=spectral_proxy, vmin=0, vmax=10, marker='o', edgecolors='none', cmap='viridis', s=500)
     plt.scatter(k_mesh[:, 0], k_mesh[:, 1], c=spectral_proxy, marker='o', edgecolors='none', cmap='viridis', s=500)
-    # plt.scatter(k_mesh[12, 0], k_mesh[12, 1], c=spectral_proxy[12], marker='o', edgecolors='none', cmap='viridis', s=500) # for testing to find index of peak
+    # plt.scatter(k_mesh[K_idx, 0], k_mesh[K_idx, 1], c=spectral_proxy[K_idx], marker='o', edgecolors='none', cmap='viridis', s=500) # for testing to find index of peak
     if show_BZ:
         if geometry=="honeycomb":
             # define the first BZ corners
@@ -335,11 +342,17 @@ def plot_peak_intensity(base_dir, output_dir):
         gt0_k_mean, gt0_k_err = util.jackknife(np.ones_like(gt0_k), gt0_k)
         spectral_proxy = beta * gt0_k_mean
         spectral_proxy_err = beta * gt0_k_err
-        # the K point at the top of the BZ is at (k_mesh[12,0], k_mesh[12,1]) and its value is spectral_proxy[12]
-        # print(k_mesh[12,:])
+
+        # find K point using a search over the coordinate mesh and minimizing distance to K=(0, 4π/3a)
+        # for 6x6 the value is 12
+        a = 1
+        K_target = np.array([0, 4*np.pi/(3*np.sqrt(3)*a)])
+        distances = np.linalg.norm(k_mesh - K_target, axis=1)
+        K_idx = np.argmin(distances)
+
         temps.append(T)
-        intensities.append(spectral_proxy[12])
-        errors.append(spectral_proxy_err[12])
+        intensities.append(spectral_proxy[K_idx])
+        errors.append(spectral_proxy_err[K_idx])
 
     sorted_indices = np.argsort(temps)
     temps = np.array(temps)[sorted_indices]
@@ -382,8 +395,9 @@ def main():
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U4_mu0_20000sweeps/T_0.1/"
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U6_mu0_20000sweeps/T_0.1/"
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U10_mu0_20000sweeps/T_0.1/"
+    # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_3x3_U3_mu0_20000sweeps_betarange2-15_nbeta30/T_0.101148/"
 
-    out_path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/"
+    out_path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/plots/"
 
     # # NOTE: uncomment to plot the spectral function proxy for a given temperature to visualize the fermi surface
     # gt0 = get_gt0(path)
@@ -393,7 +407,7 @@ def main():
     # base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U0.5_mu0_20000sweeps/"
     # base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U5_mu0_20000sweeps_betamin2/"
     # base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U3_mu0_20000sweeps_betarange2-15/"
-    base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U3_mu0_20000sweeps_betarange2-15_nbeta30/"
+    base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_12x12_U3_mu0_20000sweeps_betarange2-15_nbeta30/"
 
     plot_peak_intensity(base_dir, out_path)
     
