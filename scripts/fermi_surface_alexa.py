@@ -70,6 +70,7 @@ def get_gt0(path):
 def fold_to_first_bz_honeycomb(k_mesh, b1, b2):
     """
     Fold k-points into the first Brillouin zone (hexagon) of honeycomb lattice.
+    Note: written by Claude.
     
     Parameters:
     -----------
@@ -199,8 +200,7 @@ def fourier_transform_gt0_bins(path, gt0_proxy, fold_k):
         b2 = np.array([2*np.pi/3/a, -2*np.pi/np.sqrt(3)/a])
 
         # define spacing between nearest neighbor points (which is also the spacing between the two sites in the basis)
-        delta = a / np.sqrt(3)
-        dvec = np.array([delta, 0]) # vector from A to B site within unit cell
+        dvec = np.array([a, 0]) # vector from A to B site within unit cell
 
         # define allowed k points using reciprocal lattice vectors b1 and b2
         mx_arr = np.arange(-Nx//2, Nx//2+1) # NOTE: potentially change this because we may have too many k points if we include the endpoint
@@ -213,8 +213,6 @@ def fourier_transform_gt0_bins(path, gt0_proxy, fold_k):
         # print(k_mesh)
 
         fourier_sum = np.zeros((gt0_proxy.shape[0],k_mesh.shape[0]), dtype=np.complex128)
-
-        # TODO: have to write a function that folds these k points back into the hexagonal first BZ
 
         if trans_sym:
             for r in range(num_ij):
@@ -250,22 +248,6 @@ def fourier_transform_gt0_bins(path, gt0_proxy, fold_k):
 
     return k_mesh, gt0_k # maybe change this to either just k_mesh or just the grids
 
-# def fourier_transform_gt0(path, gt0_proxy, k_spacing):
-#     """Performs the Fourier transform from G(r) to G(k) for a 2d k mesh with a specified spacing.
-#     gt0_proxy is of shape (num_ij). Assumes data is not binned (after jackknife resampling).
-#     TODO: REWRITE THIS
-    
-#     Returns
-#     -------
-#         k_mesh : ndarray
-#             Mesh of k points of shape (Npoints, 2) where the [:,0] entries give the kx coordinate and the [:,1] entries give ky coordinate
-
-#         gt0_k : ndarray
-#             Fourier transformed green's functions of k, shape (Nbins, Npoints). Npoints is the number of k points. Can fetch the kx and ky
-#             coordinates of a given point from the k_mesh array.
-#     """
-
-
 def plot_spectral_proxy(path, output_dir, gt0, show_BZ=False, fold_k=True):
     """
     Computes a proxy for A(k, w=0) using the unequal-time green's function.
@@ -299,6 +281,7 @@ def plot_spectral_proxy(path, output_dir, gt0, show_BZ=False, fold_k=True):
     plt.figure(figsize=(8, 6))
     # plt.scatter(k_mesh[:, 0], k_mesh[:, 1], c=spectral_proxy, vmin=0, vmax=10, marker='o', edgecolors='none', cmap='viridis', s=500)
     plt.scatter(k_mesh[:, 0], k_mesh[:, 1], c=spectral_proxy, marker='o', edgecolors='none', cmap='viridis', s=500)
+    # plt.scatter(k_mesh[12, 0], k_mesh[12, 1], c=spectral_proxy[12], marker='o', edgecolors='none', cmap='viridis', s=500) # for testing to find index of peak
     if show_BZ:
         if geometry=="honeycomb":
             # define the first BZ corners
@@ -324,11 +307,68 @@ def plot_spectral_proxy(path, output_dir, gt0, show_BZ=False, fold_k=True):
     plt.tight_layout()
 
     save_file = f"spectral_func_{geometry}_{Nx}x{Ny}_U{U}_mu{mu}_T{1/beta:.1f}"
-    # plt.savefig(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.png", dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(output_dir, f"{save_file}.png"), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, f"{save_file}.png"), dpi=300, bbox_inches='tight') 
+    # NOTE: bring this saving back after you stop playing with it
 
     plt.show()
 
+def plot_peak_intensity(base_dir, output_dir):
+    """Plots the peak intensity at the upper K point at k-coordinates 1/3(b1 + b2) wrt temperature. Base_dir is the
+    parent folder with all the temperature subfolders."""
+
+    temps = []
+    intensities = []
+    errors = []
+    for folder in os.listdir(base_dir): # each folder represents a temperature
+        if not folder.startswith("T_"):
+            continue
+        T = float(folder[2:])
+        folder_path = os.path.join(base_dir, folder) + "/"
+
+        gt0 = get_gt0(folder_path)
+        L, beta, nsweep_meas = util.load_firstfile(folder_path, "params/L", "metadata/beta", "params/n_sweep_meas")
+        gt0_proxy = gt0[:, L//2, :]
+
+        k_mesh, gt0_k = fourier_transform_gt0_bins(folder_path, gt0_proxy, fold_k=False)
+        # print(gt0_k.shape)
+
+        gt0_k_mean, gt0_k_err = util.jackknife(np.ones_like(gt0_k), gt0_k)
+        spectral_proxy = beta * gt0_k_mean
+        spectral_proxy_err = beta * gt0_k_err
+        # the K point at the top of the BZ is at (k_mesh[12,0], k_mesh[12,1]) and its value is spectral_proxy[12]
+        # print(k_mesh[12,:])
+        temps.append(T)
+        intensities.append(spectral_proxy[12])
+        errors.append(spectral_proxy_err[12])
+
+    sorted_indices = np.argsort(temps)
+    temps = np.array(temps)[sorted_indices]
+    intensities = np.array(intensities)[sorted_indices]
+    errors = np.array(errors)[sorted_indices]
+
+    # # If you want to only plot less than a certain temperature
+    # mask = temps<1
+    # temps = temps[mask]
+    # intensities = intensities[mask]
+    # errors = errors[mask]
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.errorbar(temps, intensities, errors, fmt='o-', linewidth=2, markersize=6, label=f"U={U}")
+
+    # plt.xscale('log')
+    plt.xlabel('$T$', fontsize=12)
+    plt.ylabel('$\\beta G(K, \\tau=\\beta/2)$', fontsize=12)
+    plt.title(f'$A(k, \\omega)$ proxy peak intensity at K point $k=(0, 4\\pi/3a)$\n{Nx}x{Ny} {geometry} lattice, U={U}, mu={mu:.2f}', fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.legend(frameon=False)
+    plt.tight_layout()
+
+    save_file = f"Kpoint_intensity_{geometry}_{Nx}x{Ny}_U{U}_mu{mu}_{nsweep_meas}sweeps"
+    plt.savefig(os.path.join(output_dir, f"{save_file}.png"), dpi=300, bbox_inches='tight') 
+    np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[temps, intensities, errors], delimiter="\t", header="T\tpeak intensity\terror")
+
+    plt.show()
 
 def main():
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/square_6x6_U6_mu0_bondcorr_400000sweeps/T_0.5/"
@@ -339,29 +379,47 @@ def main():
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U0_mu0_10sweeps/T_0.1/"
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U0.5_mu0_20000sweeps/T_0.1/"
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U2_mu0_10000sweeps/T_0.1/"
-    path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U4_mu0_20000sweeps/T_0.1/"
+    # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U4_mu0_20000sweeps/T_0.1/"
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U6_mu0_20000sweeps/T_0.1/"
     # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U10_mu0_20000sweeps/T_0.1/"
 
     out_path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/"
 
-    gt0 = get_gt0(path)
-    plot_spectral_proxy(path, out_path, gt0, show_BZ=True, fold_k=True)
+    # # NOTE: uncomment to plot the spectral function proxy for a given temperature to visualize the fermi surface
+    # gt0 = get_gt0(path)
+    # plot_spectral_proxy(path, out_path, gt0, show_BZ=True, fold_k=False)
+
+
+    # base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U0.5_mu0_20000sweeps/"
+    # base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U5_mu0_20000sweeps_betamin2/"
+    # base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U3_mu0_20000sweeps_betarange2-15/"
+    base_dir = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/honeycomb_6x6_U3_mu0_20000sweeps_betarange2-15_nbeta30/"
+
+    plot_peak_intensity(base_dir, out_path)
     
 def main_cmd_line():
     parser = argparse.ArgumentParser(description='Plot density and/or compressibility from DQMC data')
-    parser.add_argument('--input_path', required=True, help='Path to input data directory, temperature specific. Should contain all the .h5 files. Make sure to use trailing slash.')
+    parser.add_argument('--input_path', required=True, help='Path to input data directory. If plotting fermi surface should be temperature specific. If plotting peak intensity vs. temperature should be parent directory. Make sure to use trailing slash.')
     parser.add_argument('--output_dir', required=True, help='Path to output directory for plots.')
+    parser.add_argument('--plot', required=True, choices=['fermi_surface', 'K_peak'], 
+                        help='What to plot: the whole fermi surface (temperature specific) or the peak intensity at the K point vs. temperature.')
     parser.add_argument('--show_bz', choices=[0,1], default=1, help='Turn off to not show 1st BZ outline.')
-    parser.add_argument('--fold_k', choices=[0,1], default=1, help='Turn off to not fold k points into the 1st BZ.')    
+    parser.add_argument('--fold_k', choices=[0,1], default=0, help='Turn off to not fold k points into the 1st BZ.')    
     args = parser.parse_args()
+
+    # TODO: ADD CHECK FOR INCOMPATIBLE PLOT AND FILEPATH.
 
     # Create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
     
-    gt0 = get_gt0(args.input_path)
-    plot_spectral_proxy(args.input_path, args.output_dir, gt0, show_BZ=args.show_bz, fold_k=args.fold_k)
-
+    if args.plot == 'fermi_surface':
+        gt0 = get_gt0(args.input_path)
+        plot_spectral_proxy(args.input_path, args.output_dir, gt0, show_BZ=args.show_bz, fold_k=args.fold_k)
+    
+    if args.plot == 'K_peak':
+        plot_peak_intensity(args.input_path, args.output_dir)
+    
+    
 if __name__ == "__main__":
     main()
     # main_cmd_line()
