@@ -1,0 +1,49 @@
+CC = gcc
+
+# znver2 is the ISA baseline shared by all Zen2/3/4 chips: Zen3 and Zen4
+# are strict supersets of Zen2's instruction set, so code built for
+# znver2 runs correctly (no SIGILL) on znver3 and znver4 nodes too.
+# -mtune=znver3 just biases instruction scheduling toward a "middle of
+# the fleet" pipeline model; it does not change which instructions are
+# emitted (that's controlled by -march only).
+CFLAGS = -std=gnu11 -Ofast -flto -march=znver2 -mtune=znver3
+CFLAGS += -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter
+CFLAGS += -DMKL_DIRECT_CALL_SEQ
+CFLAGS += -DGIT_ID=\"$(shell git describe --always)\"
+CFLAGS += -DGIT_REPO=\"$(shell git config --get remote.origin.url)\"
+CFLAGS += -DOMP_MEAS_NUM_THREADS=2
+CFLAGS += -DPROFILE_ENABLE
+# CFLAGS += -DUSE_CPLX  # uncomment to use complex numbers
+CFLAGS += -fopenmp
+CFLAGS += -D__builtin_assume\(x\)=
+
+CFLAGS += -I${MKLROOT}/include
+
+OPTFLAGS = -fargument-noalias
+
+LDFLAGS += -lhdf5 -lhdf5_hl
+LDFLAGS += -L${MKLROOT}/lib/intel64
+LDFLAGS += -L/share/software/user/restricted/imkl/2019/lib/intel64
+
+LDFLAGS +=  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+
+OBJS = data.o dqmc.o greens.o meas.o prof.o sig.o updates.o
+
+SUFFIX = znall
+
+all: dqmc_1_${SUFFIX} dqmc_stack_${SUFFIX}
+
+dqmc_1_${SUFFIX}: ${OBJS} main_1.o
+	@echo linking $@
+	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
+
+dqmc_stack_${SUFFIX}: ${OBJS} main_stack.o
+	@echo linking $@
+	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
+
+%.o: ../src/%.c
+	@echo compiling $<
+	@${CC} -c ${CFLAGS} ${OPTFLAGS} $<
+
+clean:
+	rm -f *.o *.optrpt *.yaml *.tmp dqmc_1_${SUFFIX} dqmc_stack_${SUFFIX}
