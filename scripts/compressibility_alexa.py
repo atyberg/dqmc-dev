@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import util
 import argparse
 
-Nx, Ny, Norb, U, beta = 0, 0, 0, 0, 0
+Nx, Ny, Norb, U, beta, nsweep = 0, 0, 0, 0, 0, 0
 geometry = ""
 t = 1
 
@@ -26,7 +26,7 @@ def load_densities(base_dir):
     Loads the data for each mu value in the directory and computes the density <n> at each temperature, saving it in a dict.
     Each entry in the dict for a specific mu value is of shape (Nbins, Norb) if trans sym is on (has not been averaged yet).
     """
-    global Nx, Ny, Norb, U, beta, geometry
+    global Nx, Ny, Norb, U, beta, geometry, nsweep
     densities_dict = {} # dictionary to store the density arrays at each mu. each entry is of shape (Nbins,).
 
     for folder in os.listdir(base_dir): # each folder represents a mu value
@@ -36,14 +36,15 @@ def load_densities(base_dir):
         # print(f"mu = {mu}") # for testing
         folder_path = os.path.join(base_dir, folder) + "/"
 
-        Nx, Ny, Norb, U, beta, geometry, trans_sym = util.load_firstfile(folder_path, 
+        Nx, Ny, Norb, U, beta, geometry, trans_sym, nsweep = util.load_firstfile(folder_path, 
                                                             "metadata/Nx", 
                                                             "metadata/Ny", 
                                                             "metadata/Norb",
                                                             "metadata/U",
                                                             "metadata/beta",
                                                             "metadata/geometry", 
-                                                            "metadata/trans_sym")
+                                                            "metadata/trans_sym",
+                                                            "params/n_sweep_meas")
         
         ns, density, sign = util.load(folder_path, "meas_eqlt/n_sample", "meas_eqlt/density", "meas_eqlt/sign")
                 
@@ -247,7 +248,7 @@ def plot_density_jackknife(base_dir, output_dir, TB_file=None):
         plt.errorbar(mu_vals, n_means, n_errs, fmt='o', linewidth=2, markersize=6, label="DQMC")
         # plt.xscale('log')
 
-        save_file = f"density_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}"
+        save_file = f"density_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}_{nsweep}sweeps"
         # np.savetxt(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.csv", np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
         np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
 
@@ -332,7 +333,7 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data
         # plt.xscale('log')
         
         if save_data:
-            save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}"
+            save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}_{nsweep}sweeps"
             # np.savetxt(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.csv", np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
             np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[mu_vals, kappa_means, kappa_errs], delimiter="\t", header="mu\tkappa\tkappa error")
 
