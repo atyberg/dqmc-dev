@@ -47,14 +47,10 @@ def load_densities(base_dir):
         
         ns, density, sign = util.load(folder_path, "meas_eqlt/n_sample", "meas_eqlt/density", "meas_eqlt/sign")
                 
-        # # only use completed bins
-        # mask = ns == ns.max()
-        # g00_u = g00_u[mask]
-        # g00_d = g00_d[mask]
-        # double_occ = double_occ[mask]
-        # density_u = density_u[mask]
-        # density_d = density_d[mask]
-        # sign = sign[mask]
+        # only use completed bins
+        mask = ns == ns.max()
+        density = density[mask]
+        sign = sign[mask]
 
         geometry = geometry[()].decode('utf-8') # now it's a string, not an array with a bytes object
 
@@ -262,8 +258,13 @@ def plot_density_jackknife(base_dir, output_dir, TB_file=None):
     plt.savefig(os.path.join(output_dir, f"{save_file}.png"), dpi=300, bbox_inches='tight')
     plt.show()
 
-def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None):
+def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data=False):
     densities_dict = load_densities(base_dir)
+
+    # make sure all the entries have the same number of bins
+    min_size = min(n.shape[0] for n in densities_dict.values())
+    densities_dict = {mu: n[:min_size] for mu, n in densities_dict.items()}
+
     mu_vals = []
     n_vals = []
 
@@ -271,7 +272,7 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None):
         n = densities_dict[mu]
         mu_vals.append(mu)
         n_vals.append(n)
-        # print(n.shape)
+        print(n.shape)     
 
     # Sort by mu for clean plotting
     sorted_indices = np.argsort(mu_vals)
@@ -305,6 +306,7 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None):
     # plt.plot(T_vals, avg_spheat_vals, 'o', linewidth=2, markersize=6, label="finite difference")
 
     # TODO: modify plotting, it's currently density
+    print(beta)
     temp = 1.0 / beta
     if TB_file != None:
         # Read in the tightbinding data
@@ -317,15 +319,17 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None):
         plt.errorbar(mu_vals[mu_mask], kappa_means[mu_mask], kappa_errs[mu_mask], fmt='o', linewidth=2, markersize=6, label="DQMC")
         plt.plot(mu_vals_TB, kappa_vals_TB, 'o', linewidth=2, markersize=6, label="TB")
 
-        save_file = f"compressibility_{geometry}_DQMC+TB_{Nx}x{Ny}_U{U}_T{temp:.2f}"
+        if save_data:
+            save_file = f"compressibility_{geometry}_DQMC+TB_{Nx}x{Ny}_U{U}_T{temp:.2f}"
 
     else:
         plt.errorbar(mu_vals, kappa_means, kappa_errs, fmt='o', linewidth=2, markersize=6, label="DQMC")
         # plt.xscale('log')
-
-        save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}"
-        # np.savetxt(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.csv", np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
-        np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[mu_vals, kappa_means, kappa_errs], delimiter="\t", header="mu\tkappa\tkappa error")
+        
+        if save_data:
+            save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}"
+            # np.savetxt(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.csv", np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
+            np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[mu_vals, kappa_means, kappa_errs], delimiter="\t", header="mu\tkappa\tkappa error")
 
 
     plt.xlabel('$\\mu$', fontsize=12)
@@ -335,12 +339,11 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None):
     plt.legend(frameon=False)
     plt.tight_layout()
 
-    # plt.savefig(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.png", dpi=300, bbox_inches='tight')
-    plt.savefig(os.path.join(output_dir, f"{save_file}.png"), dpi=300, bbox_inches='tight')
+    if save_data:
+        # plt.savefig(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.png", dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(output_dir, f"{save_file}.png"), dpi=300, bbox_inches='tight')
+
     plt.show()
-
-
-
 
 def main():
     parser = argparse.ArgumentParser(description='Plot density and/or compressibility from DQMC data')
@@ -363,7 +366,7 @@ def main():
         plot_density_jackknife(args.input_dir, args.output_dir, args.tb_file)
     
     if args.plot in ['compressibility', 'both']:
-        plot_compressibility_jackknife(args.input_dir, args.output_dir, args.tb_file)
+        plot_compressibility_jackknife(args.input_dir, args.output_dir, args.tb_file, save_data=True)
 
 
 def main_vs():
