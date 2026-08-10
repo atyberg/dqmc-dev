@@ -194,6 +194,11 @@ def compute_energy(g00_u, g00_d, double_occ, density_u, density_d, sign, geometr
 
 def plot_density_jackknife(base_dir, output_dir, TB_file=None):
     densities_dict = load_densities(base_dir)
+
+    # make sure all the entries have the same number of bins
+    min_size = min(n.shape[0] for n in densities_dict.values())
+    densities_dict = {mu: n[:min_size] for mu, n in densities_dict.items()}
+
     mu_vals = []
     n_vals = []
 
@@ -272,7 +277,7 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data
         n = densities_dict[mu]
         mu_vals.append(mu)
         n_vals.append(n)
-        print(n.shape)     
+        # print(n.shape)     
 
     # Sort by mu for clean plotting
     sorted_indices = np.argsort(mu_vals)
