@@ -264,7 +264,7 @@ def plot_density_jackknife(base_dir, output_dir, TB_file=None):
     plt.savefig(os.path.join(output_dir, f"{save_file}.png"), dpi=300, bbox_inches='tight')
     plt.show()
 
-def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data=False):
+def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data=False, npoint_stencil=3):
     densities_dict = load_densities(base_dir)
 
     # make sure all the entries have the same number of bins
@@ -290,10 +290,24 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data
     # calculate compressibility using finite difference method
     N = Nx * Ny * Norb
     kappa_vals = []
-    for i in range(1, len(n_vals)-1):
-        kappa = (n_vals[i+1,:] - n_vals[i-1,:]) / (mu_vals[i+1] - mu_vals[i-1])
-        kappa_vals.append(kappa)
-    mu_vals = mu_vals[1:-1]
+    if npoint_stencil == 3:
+        for i in range(1, len(n_vals)-1):
+            kappa = (n_vals[i+1,:] - n_vals[i-1,:]) / (mu_vals[i+1] - mu_vals[i-1])
+            kappa_vals.append(kappa)
+        mu_vals = mu_vals[1:-1]
+    elif npoint_stencil == 5:
+        # check that mu spacing is uniform
+        diffs = np.diff(mu_vals)
+        if not np.allclose(diffs, diffs[0]):
+            raise ValueError("mu array spacing is not uniform")
+        
+        dmu = diffs[0]
+        for i in range(2, len(n_vals)-2):
+            kappa = (-n_vals[i+2,:] + 8*n_vals[i+1,:] - 8*n_vals[i-1,:] + n_vals[i-2,:]) / (12*dmu)
+            kappa_vals.append(kappa)
+        mu_vals = mu_vals[2:-2]
+    else:
+        raise ValueError("Only 3 and 5 point stencils allowed.")
 
     # use jackknife resampling to get mean and error estimates
     kappa_means = []
@@ -358,6 +372,7 @@ def main():
     parser.add_argument('--plot', required=True, choices=['density', 'compressibility', 'both'], 
                         help='What to plot: density, compressibility, or both')
     parser.add_argument('--tb_file', default=None, help='Optional path to tight-binding data file')
+    parser.add_argument('--npoint_stencil', default=3, help='Number of points to use in central difference for compressibility.')
     
     args = parser.parse_args()
 
@@ -372,7 +387,7 @@ def main():
         plot_density_jackknife(args.input_dir, args.output_dir, args.tb_file)
     
     if args.plot in ['compressibility', 'both']:
-        plot_compressibility_jackknife(args.input_dir, args.output_dir, args.tb_file, save_data=True)
+        plot_compressibility_jackknife(args.input_dir, args.output_dir, args.tb_file, save_data=True, npoint_stencil=args.npoint_stencil)
 
 
 def main_vs():
@@ -383,12 +398,12 @@ def main_vs():
 
     # HONEYCOMB FILEPATHS
     # TB_file = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/density_square_TB_T1.0.csv"
-    TB_file = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/compressibility_square_TB_T1.0.csv"
+    # TB_file = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/compressibility_square_TB_T1.0.csv"
 
     out_path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/"
 
-    # plot_density_jackknife(path, out_path, TB_file)
-    plot_compressibility_jackknife(path, out_path, TB_file)
+    # plot_density_jackknife(path, out_path)
+    plot_compressibility_jackknife(path, out_path, TB_file=None, save_data=False, npoint_stencil=5)
 
 
 if __name__ == "__main__":
