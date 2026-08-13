@@ -372,7 +372,7 @@ def main():
     parser.add_argument('--plot', required=True, choices=['density', 'compressibility', 'both'], 
                         help='What to plot: density, compressibility, or both')
     parser.add_argument('--tb_file', default=None, help='Optional path to tight-binding data file')
-    parser.add_argument('--npoint_stencil', default=3, help='Number of points to use in central difference for compressibility.')
+    parser.add_argument('--npoint_stencil', default=3, type=int, help='Number of points to use in central difference for compressibility.')
     
     args = parser.parse_args()
 
