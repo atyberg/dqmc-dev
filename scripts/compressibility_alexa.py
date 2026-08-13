@@ -298,9 +298,10 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data
     elif npoint_stencil == 5:
         # check that mu spacing is uniform
         diffs = np.diff(mu_vals)
-        if not np.allclose(diffs, diffs[0]):
+        print(diffs)
+        if not np.allclose(diffs, diffs[0], rtol=1e-4):
             raise ValueError("mu array spacing is not uniform")
-        
+
         dmu = diffs[0]
         for i in range(2, len(n_vals)-2):
             kappa = (-n_vals[i+2,:] + 8*n_vals[i+1,:] - 8*n_vals[i-1,:] + n_vals[i-2,:]) / (12*dmu)
@@ -394,13 +395,14 @@ def main_vs():
     # TODO: modify this so it can take path in as a command line argument
 
     # SQUARE FILEPATHS
-    path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/mu_sweep_square_6x6_U0_T1.0_10000sweeps"
+    # path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/mu_sweep_square_6x6_U0_T1.0_10000sweeps"
 
     # HONEYCOMB FILEPATHS
     # TB_file = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/density_square_TB_T1.0.csv"
     # TB_file = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/compressibility_square_TB_T1.0.csv"
+    path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/beta_mu_sweep_honeycomb_6x6_U3_20000sweeps/T_0.1"
 
-    out_path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/"
+    out_path = "/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/plots/compressibility/"
 
     # plot_density_jackknife(path, out_path)
     plot_compressibility_jackknife(path, out_path, TB_file=None, save_data=False, npoint_stencil=5)
