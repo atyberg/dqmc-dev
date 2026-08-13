@@ -347,7 +347,7 @@ def plot_compressibility_jackknife(base_dir, output_dir, TB_file=None, save_data
         # plt.xscale('log')
         
         if save_data:
-            save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}_{nsweep}sweeps"
+            save_file = f"compressibility_{geometry}_{Nx}x{Ny}_U{U}_T{temp:.2f}_{npoint_stencil}stencil_{nsweep}sweeps"
             # np.savetxt(f"/Users/alexatyberg/Documents/Stanford/Devereaux_Research/DQMC_code/{save_file}.csv", np.c_[mu_vals, n_means, n_errs], delimiter="\t", header="mu\t<n>\t<n> error")
             np.savetxt(os.path.join(output_dir, f"{save_file}.csv"), np.c_[mu_vals, kappa_means, kappa_errs], delimiter="\t", header="mu\tkappa\tkappa error")
 
